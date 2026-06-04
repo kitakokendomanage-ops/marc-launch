@@ -594,7 +594,7 @@ body{
 </div>
 
 <script>
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzh2id2zYOwZecGMIiZG3-n0Juqa0KKQRjchXurVbjDnTEKKgejGHDe5LMiJKq-Zk4v/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwVAZQVU2sVggSSSS27UNMc5vZ2yVpZvK1fBqmAnG7uskX9aDn6X_HCbx5FScmSy1YL/exec';
 const SURVEY_URL = 'https://hosaki8739-svg.github.io/marc-survey/';
 const LS_KEY = 'marc_launch_data';
 const MEMO_KEY = 'marc_launch_memos';
@@ -786,61 +786,40 @@ function viewText(key,label){
 
 // ===== POLICY =====
 function openPolicy(){
-  openSheet('ファイルを追加',
+  openSheet('指導ポリシーを追加',
+    '<div class="s-note"><span class="s-note-icon">ℹ️</span><div class="s-note-text">タイトルを入力してファイルを選択すると、メールアプリが開きます。そのまま送信してください。</div></div>'+
     '<div class="s-label">タイトル</div>'+
     '<input class="s-input" id="sv-title" type="text" placeholder="例：指導ポリシー2025">'+
-    '<div class="s-label">ファイルを選択（3MBまで）</div>'+
-    '<input type="file" id="sv-file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xlsx,.pptx" style="width:100%;padding:10px 0;font-size:14px;margin-bottom:6px;">'+
-    '<div id="sv-file-msg" style="font-size:12px;color:var(--ink3);margin-bottom:14px;">PDF・画像・Office文書に対応</div>'+
-    '<div class="s-btns"><button class="s-cancel" onclick="closeSheet()">キャンセル</button><button class="s-ok" onclick="savePolicy()">追加</button></div>'
+    '<div class="s-label">ファイルを選択</div>'+
+    '<input type="file" id="sv-file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xlsx,.pptx" style="width:100%;padding:10px 0;font-size:14px;margin-bottom:14px;">'+
+    '<div class="s-btns"><button class="s-cancel" onclick="closeSheet()">キャンセル</button><button class="s-ok" onclick="savePolicy()">メールで送信</button></div>'
   );
 }
 function savePolicy(){
-  const titleEl=document.getElementById('sv-title');
-  const fileEl=document.getElementById('sv-file');
-  const msgEl=document.getElementById('sv-file-msg');
-  const file=fileEl&&fileEl.files[0];
-  if(!file){if(msgEl){msgEl.style.color='var(--red)';msgEl.textContent='ファイルを選択してください';}return;}
-  if(file.size>3*1024*1024){if(msgEl){msgEl.style.color='var(--red)';msgEl.textContent='3MB以内のファイルを選択してください';}return;}
-  const title=(titleEl&&titleEl.value.trim())||file.name;
-  const reader=new FileReader();
-  reader.onload=function(e){
-    D.policies.push({title:title,fileName:file.name,fileType:file.type,data:e.target.result,id:Date.now()});
-    renderPolicies(); lsSave(); closeSheet();
-  };
-  reader.readAsDataURL(file);
-}
-function deletePolicy(i){ D.policies.splice(i,1); renderPolicies(); lsSave(); }
-function viewPolicy(i){
-  const p=D.policies[i];
-  if(!p||!p.data) return;
-  if(p.fileType&&p.fileType.startsWith('image/')){
-    const w=window.open(); w.document.write('<img src="'+p.data+'" style="max-width:100%;">');
-  } else {
-    const byteStr=atob(p.data.split(',')[1]);
-    const ab=new ArrayBuffer(byteStr.length);
-    const ia=new Uint8Array(ab);
-    for(let j=0;j<byteStr.length;j++) ia[j]=byteStr.charCodeAt(j);
-    const blob=new Blob([ab],{type:p.fileType||'application/octet-stream'});
-    window.open(URL.createObjectURL(blob),'_blank');
-  }
+  const title = document.getElementById('sv-title')?.value.trim() || '指導ポリシー';
+  const fileEl = document.getElementById('sv-file');
+  const file = fileEl && fileEl.files[0];
+  const school = (D.memo && D.memo.school) ? D.memo.school : '佐賀学園 剣道部';
+  const subject = encodeURIComponent('[MARC] 指導ポリシー添付：' + title + '（' + school + '）');
+  const body = encodeURIComponent('MARCプログラム 導入・運用ナビより\n\n学校：' + school + '\nタイトル：' + title + '\n\n※ファイルを添付して送信してください。');
+  window.location.href = 'mailto:hosaki8739@gmail.com?subject=' + subject + '&body=' + body;
+  // タイトルだけローカルに記録
+  D.policies.push({title: title, url: '', id: Date.now()});
+  renderPolicies(); lsSave(); closeSheet();
 }
 function renderPolicies(){
   const list=document.getElementById('pl-list');
   const hint=document.querySelector('.pl-hint');
   if(!D.policies.length){if(hint)hint.style.display='block';list.innerHTML='';return;}
   if(hint)hint.style.display='none';
-  const icons={'application/pdf':'📄','image/jpeg':'🖼','image/png':'🖼'};
   list.innerHTML=D.policies.map(function(p,i){
-    const title=typeof p==='string'?p:(p.title||p.fileName||'');
-    const hasFile=!!p.data;
-    const icon=hasFile?(icons[p.fileType]||'📎'):'🔗';
+    const title=typeof p==='string'?p:(p.title||'');
+    const url=typeof p==='string'?'':(p.url||'');
     return '<div class="pl-row">'+
-      '<span style="font-size:20px;flex-shrink:0;">'+icon+'</span>'+
-      '<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escHtml(title)+'</div>'+(p.fileName?'<div style="font-size:11px;color:var(--ink3);">'+escHtml(p.fileName)+'</div>':'')+
-      '</div>'+
+      '<span style="font-size:20px;flex-shrink:0;">📄</span>'+
+      '<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escHtml(title)+'</div></div>'+
       '<div style="display:flex;gap:6px;flex-shrink:0;">'+
-        (hasFile?'<button class="btn btn-primary" style="font-size:11px;padding:5px 10px;" onclick="viewPolicy('+i+')">閲覧</button>':'')+
+        (url?'<button class="btn btn-primary" style="font-size:11px;padding:5px 10px;" onclick="window.open(\''+escHtml(url)+'\',\'_blank\')">閲覧</button>':'')+
         '<span class="pl-del" onclick="deletePolicy('+i+')">✕</span>'+
       '</div></div>';
   }).join('');
@@ -1011,7 +990,7 @@ async function saveToGas(key, data){
   try{
     const school = (D.memo && D.memo.school)
       ? D.memo.school
-      : '佐賀北高校 剣道部';
+      : '佐賀学園 剣道部';
     await fetch(GAS_URL, {
       method:'POST',
       mode:'no-cors',
