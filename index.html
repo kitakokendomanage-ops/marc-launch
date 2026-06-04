@@ -129,11 +129,13 @@ body{
   letter-spacing:.02em;
 }
 .btn:active{transform:scale(.96);}
-.btn-primary{background:var(--primary);color:#fff;box-shadow:0 1px 3px rgba(15,110,86,.3);}
-.btn-primary:hover{background:#0a5a45;}
-.btn-ghost{background:var(--bg);color:var(--ink2);border:1px solid var(--border2);}
-.btn-ghost:hover{background:var(--border);color:var(--ink);}
-.done-badge{font-size:12px;font-weight:700;color:var(--primary);}
+.btn-primary{background:#007AFF;color:#fff;border-radius:8px;font-weight:600;}
+.btn-primary:hover{background:#0066CC;}
+.btn-info{background:#007AFF;color:#fff;border-radius:8px;font-weight:600;}
+.btn-info:hover{background:#0066CC;}
+.btn-ghost{background:transparent;color:#007AFF;border:1.5px solid #007AFF;border-radius:8px;font-weight:600;}
+.btn-ghost:hover{background:#F0F7FF;}
+.done-badge{font-size:12px;font-weight:700;color:#34C759;}
 
 /* ===== YOUTUBE LINK ===== */
 .yt-link{
@@ -307,7 +309,7 @@ body{
 }
 .s-ok{
   flex:1;font-size:15px;padding:13px;border:none;
-  border-radius:var(--r-sm);background:var(--primary);
+  border-radius:10px;background:#007AFF;
   color:#fff;cursor:pointer;font-weight:700;
   font-family:'Noto Sans JP',sans-serif;
   box-shadow:0 2px 8px rgba(15,110,86,.3);
@@ -741,9 +743,9 @@ function saveDate(){
   const k=mMode;
   D[k].date=val; D[k].done=true;
   document.getElementById('ck-'+k).classList.add('on');
-  if(k==='ai'){ document.getElementById('sb-ai').textContent=val; document.getElementById('ac-ai').innerHTML='<button class="btn btn-ghost" style="font-size:11px;padding:5px 10px;" onclick="openDate(\'ai\',\'基本情報登録\')">変更</button>'; }
-  else if(k==='mgr'){ document.getElementById('sb-mgr').textContent=val; document.getElementById('ac-mgr').innerHTML='<button class="btn btn-ghost" style="font-size:11px;padding:5px 10px;" onclick="openDate(\'mgr\',\'管理者説明会\')">変更</button>'; }
-  else { document.getElementById('sb-exp').textContent=val; document.getElementById('ac-exp').innerHTML='<button class="btn btn-ghost" style="font-size:11px;padding:5px 10px;" onclick="openDate(\'exp\',\'ユーザー説明会\')">変更</button>'; }
+  if(k==='ai'){ document.getElementById('sb-ai').textContent=val; document.getElementById('ac-ai').innerHTML='<button class="btn btn-neutral" style="font-size:11px;padding:5px 10px;" onclick="openDate(\'ai\',\'基本情報登録\')">変更</button>'; }
+  else if(k==='mgr'){ document.getElementById('sb-mgr').textContent=val; document.getElementById('ac-mgr').innerHTML='<button class="btn btn-neutral" style="font-size:11px;padding:5px 10px;" onclick="openDate(\'mgr\',\'管理者説明会\')">変更</button>'; }
+  else { document.getElementById('sb-exp').textContent=val; document.getElementById('ac-exp').innerHTML='<button class="btn btn-neutral" style="font-size:11px;padding:5px 10px;" onclick="openDate(\'exp\',\'ユーザー説明会\')">変更</button>'; }
   lsSave(); updateProg(); closeSheet();
   saveToGas(k,{date:val});
 }
@@ -768,7 +770,7 @@ function saveText(){
   const k=mMode; D[k].text=val; D[k].done=true;
   document.getElementById('ck-'+k).classList.add('on');
   const lb={disc:'部員主体ミーティング',rule:'支援ツール'};
-  document.getElementById('ac-'+k).innerHTML='<button class="btn btn-primary" onclick="viewText(\''+k+'\',\''+lb[k]+'\')">参照</button>';
+  document.getElementById('ac-'+k).innerHTML='<button class="btn btn-neutral" onclick="viewText(\''+k+'\',\''+lb[k]+'\')">参照</button>';
   lsSave(); updateProg(); closeSheet();
   saveToGas(k,{text:val});
 }
@@ -912,7 +914,7 @@ function confirmMemo(){
   const it = document.getElementById('tl-memo');
   if(it){ it.classList.add('done'); it.textContent = '覚書（'+dateStr+' '+name+'）'; }
   const row = document.getElementById('ck-memo').closest('.row');
-  if(row){ const btn = row.querySelector('.btn'); if(btn) btn.outerHTML='<span class="done-badge">済</span>'; }
+  // 覚書確認済み - ボタンはそのまま残す
 
   // GAS保存
   D.memo = { school:school, name:name, date:dateStr, agreed:true };
@@ -973,7 +975,7 @@ function lsLoad(){
       const it=document.getElementById('tl-memo');
       if(it) it.textContent='覚書（'+(obj.memo.date||'')+(obj.memo.name?' '+obj.memo.name:'')+'）';
       const row=document.getElementById('ck-memo')?.closest('.row');
-      if(row){ const btn=row.querySelector('.btn-primary'); if(btn) btn.outerHTML='<span class="done-badge">済</span>'; }
+      // ボタンはそのまま残す（再確認可能）
     }
     // 対象者リスト
     if(obj.roster){
@@ -995,9 +997,9 @@ function lsLoad(){
       if(obj[k]&&obj[k].done&&obj[k].date){
         D[k].date=obj[k].date; D[k].done=true;
         document.getElementById('ck-'+k)?.classList.add('on');
-        if(k==='ai'){ const sb=document.getElementById('sb-ai'); if(sb) sb.textContent=obj[k].date; document.getElementById('ac-ai').innerHTML='<button class="btn btn-ghost" style="font-size:11px;padding:5px 10px;" onclick="openDate(\'ai\',\'基本情報登録\')">変更</button>'; }
-        else if(k==='mgr'){ const sb=document.getElementById('sb-mgr'); if(sb) sb.textContent=obj[k].date; document.getElementById('ac-mgr').innerHTML='<button class="btn btn-ghost" style="font-size:11px;padding:5px 10px;" onclick="openDate(\'mgr\',\'管理者説明会\')">変更</button>'; }
-        else { const sb=document.getElementById('sb-exp'); if(sb) sb.textContent=obj[k].date; document.getElementById('ac-exp').innerHTML='<button class="btn btn-ghost" style="font-size:11px;padding:5px 10px;" onclick="openDate(\'exp\',\'ユーザー説明会\')">変更</button>'; }
+        if(k==='ai'){ const sb=document.getElementById('sb-ai'); if(sb) sb.textContent=obj[k].date; document.getElementById('ac-ai').innerHTML='<button class="btn btn-neutral" style="font-size:11px;padding:5px 10px;" onclick="openDate(\'ai\',\'基本情報登録\')">変更</button>'; }
+        else if(k==='mgr'){ const sb=document.getElementById('sb-mgr'); if(sb) sb.textContent=obj[k].date; document.getElementById('ac-mgr').innerHTML='<button class="btn btn-neutral" style="font-size:11px;padding:5px 10px;" onclick="openDate(\'mgr\',\'管理者説明会\')">変更</button>'; }
+        else { const sb=document.getElementById('sb-exp'); if(sb) sb.textContent=obj[k].date; document.getElementById('ac-exp').innerHTML='<button class="btn btn-neutral" style="font-size:11px;padding:5px 10px;" onclick="openDate(\'exp\',\'ユーザー説明会\')">変更</button>'; }
       }
     });
     ['disc','rule'].forEach(function(k){
@@ -1006,7 +1008,7 @@ function lsLoad(){
         document.getElementById('ck-'+k)?.classList.add('on');
         const lb={disc:'部員主体ミーティング',rule:'支援ツール'};
         const ac=document.getElementById('ac-'+k);
-        if(ac) ac.innerHTML='<button class="btn btn-primary" onclick="viewText(\''+k+'\',\''+lb[k]+'\')">参照</button>';
+        if(ac) ac.innerHTML='<button class="btn btn-neutral" onclick="viewText(\''+k+'\',\''+lb[k]+'\')">参照</button>';
       }
     });
     if(obj.policies&&obj.policies.length){ D.policies=obj.policies; renderPolicies(); }
@@ -1047,7 +1049,7 @@ function loadFromGas(){
       const it=document.getElementById('tl-memo');
       if(it) it.textContent='覚書（'+(d.memo.date||'')+(d.memo.name?' '+d.memo.name:'')+'）';
       const row=document.getElementById('ck-memo')?.closest('.row');
-      if(row){ const btn=row.querySelector('.btn-primary'); if(btn) btn.outerHTML='<span class="done-badge">済</span>'; }
+      // ボタンはそのまま残す（再確認可能）
     }
     // 対象者リスト
     if(d.roster){
@@ -1060,9 +1062,9 @@ function loadFromGas(){
       if(d[k]&&d[k].done&&d[k].date){
         D[k].date=d[k].date; D[k].done=true;
         document.getElementById('ck-'+k)?.classList.add('on');
-        if(k==='ai'){ const sb=document.getElementById('sb-ai'); if(sb) sb.textContent=d[k].date; document.getElementById('ac-ai').innerHTML='<button class="btn btn-ghost" style="font-size:11px;padding:5px 10px;" onclick="openDate(\'ai\',\'基本情報登録\')">変更</button>'; }
-        else if(k==='mgr'){ const sb=document.getElementById('sb-mgr'); if(sb) sb.textContent=d[k].date; document.getElementById('ac-mgr').innerHTML='<button class="btn btn-ghost" style="font-size:11px;padding:5px 10px;" onclick="openDate(\'mgr\',\'管理者説明会\')">変更</button>'; }
-        else { const sb=document.getElementById('sb-exp'); if(sb) sb.textContent=d[k].date; document.getElementById('ac-exp').innerHTML='<button class="btn btn-ghost" style="font-size:11px;padding:5px 10px;" onclick="openDate(\'exp\',\'ユーザー説明会\')">変更</button>'; }
+        if(k==='ai'){ const sb=document.getElementById('sb-ai'); if(sb) sb.textContent=d[k].date; document.getElementById('ac-ai').innerHTML='<button class="btn btn-neutral" style="font-size:11px;padding:5px 10px;" onclick="openDate(\'ai\',\'基本情報登録\')">変更</button>'; }
+        else if(k==='mgr'){ const sb=document.getElementById('sb-mgr'); if(sb) sb.textContent=d[k].date; document.getElementById('ac-mgr').innerHTML='<button class="btn btn-neutral" style="font-size:11px;padding:5px 10px;" onclick="openDate(\'mgr\',\'管理者説明会\')">変更</button>'; }
+        else { const sb=document.getElementById('sb-exp'); if(sb) sb.textContent=d[k].date; document.getElementById('ac-exp').innerHTML='<button class="btn btn-neutral" style="font-size:11px;padding:5px 10px;" onclick="openDate(\'exp\',\'ユーザー説明会\')">変更</button>'; }
       }
     });
     // テキスト系
@@ -1072,7 +1074,7 @@ function loadFromGas(){
         document.getElementById('ck-'+k)?.classList.add('on');
         const lb={disc:'部員主体ミーティング',rule:'支援ツール'};
         const ac=document.getElementById('ac-'+k);
-        if(ac) ac.innerHTML='<button class="btn btn-primary" onclick="viewText(\''+k+'\',\''+lb[k]+'\')">参照</button>';
+        if(ac) ac.innerHTML='<button class="btn btn-neutral" onclick="viewText(\''+k+'\',\''+lb[k]+'\')">参照</button>';
       }
     });
     // アンケート
