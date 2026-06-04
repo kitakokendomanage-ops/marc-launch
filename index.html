@@ -381,7 +381,7 @@ body{
           <div class="row">
             <div class="ck" id="ck-roster"></div>
             <div class="ii"><div class="it" id="tl-roster">対象者リスト</div></div>
-            <div class="ia"><button class="btn btn-primary" onclick="openRoster()">閲覧</button></div>
+            <div class="ia"><button class="btn btn-primary" onclick="openRoster()">提出</button></div>
           </div>
           <div class="row">
             <div class="ck" id="ck-ai"></div>
@@ -924,13 +924,18 @@ function confirmMemo(){
 
 
 function openRoster(){
-  openSheet('対象者リスト',
+  openSheet('対象者リストを提出',
     '<div class="s-note"><span class="s-note-icon">ℹ️</span><div class="s-note-text">このプログラムに参加するすべての方について、氏名、ふりがな、性別、学年、組（生徒の場合）、および立場（指導者の場合は顧問・コーチ等）を一覧にまとめてご提出ください。なお、画像データは登録できません。</div></div>'+
-    '<div class="s-btns"><button class="s-cancel" onclick="closeSheet()">閉じる</button><button class="s-ok" onclick="confirmRoster()">ファイルを開く</button></div>'
+    '<div class="s-label">ファイルを選択</div>'+
+    '<input type="file" id="sv-roster-file" accept=".xlsx,.xls,.csv,.pdf,.doc,.docx" style="width:100%;padding:10px 0;font-size:14px;margin-bottom:14px;">'+
+    '<div class="s-btns"><button class="s-cancel" onclick="closeSheet()">キャンセル</button><button class="s-ok" onclick="confirmRoster()">メールで提出</button></div>'
   );
 }
 function confirmRoster(){
-  window.open('https://docs.google.com/spreadsheets/d/1sHos3WWMZLR13GxBjoaSjKn5hrYNvWI_/edit?usp=sharing','_blank');
+  const school = (D.memo && D.memo.school) ? D.memo.school : '佐賀北高校 剣道部';
+  const subject = encodeURIComponent('[MARC] 対象者リスト提出：' + school);
+  const body = encodeURIComponent('MARCプログラム 導入・運用ナビより\n\n学校：' + school + '\n\n※対象者リストファイルを添付して送信してください。');
+  window.location.href = 'mailto:hosaki8739@gmail.com?subject=' + subject + '&body=' + body;
   document.getElementById('ck-roster')?.classList.add('on');
   const it=document.getElementById('tl-roster'); if(it) it.classList.add('done');
   D.roster=true; lsSave(); updateProg(); closeSheet();
