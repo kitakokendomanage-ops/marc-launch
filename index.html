@@ -925,16 +925,20 @@ function confirmMemo(){
 
 function openRoster(){
   openSheet('対象者リストを提出',
-    '<div class="s-note"><span class="s-note-icon">ℹ️</span><div class="s-note-text">このプログラムに参加するすべての方について、氏名、ふりがな、性別、学年、組（生徒の場合）、および立場（指導者の場合は顧問・コーチ等）を一覧にまとめてご提出ください。なお、画像データは登録できません。</div></div>'+
-    '<div class="s-label">ファイルを選択</div>'+
-    '<input type="file" id="sv-roster-file" accept=".xlsx,.xls,.csv,.pdf,.doc,.docx" style="width:100%;padding:10px 0;font-size:14px;margin-bottom:14px;">'+
+    '<div class="s-note"><span class="s-note-icon">ℹ️</span><div class="s-note-text">氏名、ふりがな、性別、学年、組（生徒の場合）、立場（指導者の場合は顧問・コーチ等）を一覧にまとめてご提出ください。</div></div>'+
+    '<div class="s-label">タイトル</div>'+
+    '<input class="s-input" id="sv-roster-title" type="text" placeholder="例：対象者リスト_佐賀北高校">'+
+    '<div class="s-label">ファイルを選択（3MBまで）</div>'+
+    '<input type="file" id="sv-roster-file" accept=".xlsx,.xls,.csv,.pdf,.doc,.docx" style="width:100%;padding:10px 0;font-size:14px;margin-bottom:6px;">'+
+    '<div style="font-size:12px;color:var(--ink3);margin-bottom:14px;">Excel・CSV・PDF・Word に対応</div>'+
     '<div class="s-btns"><button class="s-cancel" onclick="closeSheet()">キャンセル</button><button class="s-ok" onclick="confirmRoster()">メールで提出</button></div>'
   );
 }
 function confirmRoster(){
+  const title = document.getElementById('sv-roster-title')?.value.trim() || '対象者リスト';
   const school = (D.memo && D.memo.school) ? D.memo.school : '佐賀北高校 剣道部';
-  const subject = encodeURIComponent('[MARC] 対象者リスト提出：' + school);
-  const body = encodeURIComponent('MARCプログラム 導入・運用ナビより\n\n学校：' + school + '\n\n※対象者リストファイルを添付して送信してください。');
+  const subject = encodeURIComponent('[MARC] 対象者リスト提出：' + title + '（' + school + '）');
+  const body = encodeURIComponent('MARCプログラム 導入・運用ナビより\n\n学校：' + school + '\nタイトル：' + title + '\n\n※ファイルを添付して送信してください。');
   window.location.href = 'mailto:hosaki8739@gmail.com?subject=' + subject + '&body=' + body;
   document.getElementById('ck-roster')?.classList.add('on');
   const it=document.getElementById('tl-roster'); if(it) it.classList.add('done');
