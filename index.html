@@ -935,7 +935,7 @@ function confirmRoster(){
   const title = document.getElementById('sv-roster-title')?.value.trim() || '対象者リスト';
   const school = (D.memo && D.memo.school) ? D.memo.school : '佐賀北高校 剣道部';
   const subject = encodeURIComponent('[MARC] 対象者リスト提出：' + title + '（' + school + '）');
-  const body = encodeURIComponent('MARCプログラム 導入・運用ナビより\n\n学校：' + school + '\nタイトル：' + title + '\n\n▼ このメールにファイルを追加して送信ください。' + '');
+  const body = encodeURIComponent('MARCプログラム 導入・運用ナビより\n\n学校：' + school + '\nタイトル：' + title + '\n\n▼ このメールにファイルをドラッグ&ドロップして送信ください。' + '');
   window.location.href = 'mailto:hosaki8739@gmail.com?subject=' + subject + '&body=' + body;
   document.getElementById('ck-roster')?.classList.add('on');
   const it=document.getElementById('tl-roster'); if(it) it.classList.add('done');
