@@ -631,10 +631,12 @@ body{
         <div style="font-size:11px;font-weight:700;color:#666;margin-bottom:6px;">Googleカレンダーに予定を追加</div>
         <input id="idx-cal-title" placeholder="予定のタイトル" style="width:100%;font-size:13px;padding:7px 10px;border:1px solid #ddd;border-radius:7px;margin-bottom:6px;font-family:inherit;box-sizing:border-box;">
         <div style="display:flex;gap:6px;margin-bottom:8px;">
-          <input type="date" id="idx-cal-date" style="flex:1;font-size:12px;padding:6px 8px;border:1px solid #ddd;border-radius:7px;">
-          <input type="time" id="idx-cal-start" style="flex:1;font-size:12px;padding:6px 8px;border:1px solid #ddd;border-radius:7px;" value="17:00">
+          <input type="date" id="idx-cal-date" style="flex:2;font-size:12px;padding:6px 8px;border:1px solid #ddd;border-radius:7px;">
+          <select id="idx-cal-start" style="flex:1;font-size:13px;padding:6px 8px;border:1px solid #ddd;border-radius:7px;background:#fff;font-family:inherit;">
+          </select>
           <span style="display:flex;align-items:center;font-size:12px;color:#888;">〜</span>
-          <input type="time" id="idx-cal-end" style="flex:1;font-size:12px;padding:6px 8px;border:1px solid #ddd;border-radius:7px;" value="18:00">
+          <select id="idx-cal-end" style="flex:1;font-size:13px;padding:6px 8px;border:1px solid #ddd;border-radius:7px;background:#fff;font-family:inherit;">
+          </select>
         </div>
         <div style="display:flex;gap:6px;">
           <button onclick="submitCalAdd()" style="flex:1;background:#1B3A5C;color:#fff;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">追加する</button>
@@ -1417,7 +1419,12 @@ function renderMonthGridDesktop(year, month, events, grid) {
   html += '</tr></tbody></table>';
   if (events.length > 0) {
     html += '<div style="margin-top:12px;border-top:1px solid #e8ede8;padding-top:10px;"><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:6px;">予定一覧</div>';
-    var sorted = events.slice().sort(function(a,b){return (a.dateKey||a.rawDate||'')>(b.dateKey||b.rawDate||'')?1:-1;});
+    var sorted = events.slice().sort(function(a,b){
+      // ★新しい日付・時間が上に来るよう降順ソート
+      var da = (a.dateKey||a.rawDate||'') + (a.time||'');
+      var db = (b.dateKey||b.rawDate||'') + (b.time||'');
+      return da > db ? -1 : da < db ? 1 : 0;
+    });
     sorted.forEach(function(ev){
       var evId=ev.id||'';
       var safeTitle3 = (ev.title||'').replace(/"/g,'&quot;');
@@ -1514,8 +1521,44 @@ function printCalendar() {
   win.onload = function(){ win.print(); };
 }
 
+// ===== 時刻セレクトボックス初期化（30分刻み）=====
+function initTimeSelects() {
+  var times = [];
+  for (var h = 6; h <= 22; h++) {
+    times.push(String(h).padStart(2,'0') + ':00');
+    times.push(String(h).padStart(2,'0') + ':30');
+  }
+  ['idx-cal-start','idx-cal-end'].forEach(function(id) {
+    var sel = document.getElementById(id);
+    if (!sel) return;
+    times.forEach(function(t) {
+      var opt = document.createElement('option');
+      opt.value = t;
+      opt.textContent = t;
+      sel.appendChild(opt);
+    });
+  });
+  // デフォルト値
+  var s = document.getElementById('idx-cal-start');
+  var e = document.getElementById('idx-cal-end');
+  if (s) s.value = '17:00';
+  if (e) e.value = '18:00';
+  // 開始を変えたら終了を1時間後に自動設定
+  if (s) s.addEventListener('change', function() {
+    var parts = this.value.split(':');
+    var h = parseInt(parts[0]);
+    var m = parts[1];
+    var endH = h + 1;
+    if (endH <= 22) {
+      var endVal = String(endH).padStart(2,'0') + ':' + m;
+      if (e && times.indexOf(endVal) >= 0) e.value = endVal;
+    }
+  });
+}
+
 function loadNewsForIndex(){
   initCalendar();
+  initTimeSelects(); // 時刻セレクトボックスを初期化
   // 議題は別途getNewsで取得
   fetch(GAS_DASH + '?action=getNews', { method: 'GET' })
   .then(function(r){ return r.json(); })
@@ -1523,16 +1566,20 @@ function loadNewsForIndex(){
     if(data.status !== 'ok') return;
     const agenda = data.agenda;
     if(agenda && agenda.date){
-      const wrap = document.getElementById('idx-agenda-wrap');
-      if(wrap) wrap.style.display = 'block';
-      const d = new Date(agenda.date + 'T00:00:00');
-      const DOW = ['日','月','火','水','木','金','土'];
-      const dateLabel = (d.getMonth()+1) + '月' + d.getDate() + '日（' + DOW[d.getDay()] + '）';
-      const timeLabel = agenda.start && agenda.end ? ' ' + agenda.start + '〜' + agenda.end : '';
-      const dateEl = document.getElementById('idx-agenda-date');
-      if(dateEl) dateEl.textContent = dateLabel + timeLabel;
-      const textEl = document.getElementById('idx-agenda-text');
-      if(textEl) textEl.textContent = agenda.text || '—';
+      // ★過去の日付の議題は表示しない
+      var agendaDate = new Date(agenda.date + 'T23:59:59');
+      if(agendaDate >= new Date()) {
+        const wrap = document.getElementById('idx-agenda-wrap');
+        if(wrap) wrap.style.display = 'block';
+        const d = new Date(agenda.date + 'T00:00:00');
+        const DOW = ['日','月','火','水','木','金','土'];
+        const dateLabel = (d.getMonth()+1) + '月' + d.getDate() + '日（' + DOW[d.getDay()] + '）';
+        const timeLabel = agenda.start && agenda.end ? ' ' + agenda.start + '〜' + agenda.end : '';
+        const dateEl = document.getElementById('idx-agenda-date');
+        if(dateEl) dateEl.textContent = dateLabel + timeLabel;
+        const textEl = document.getElementById('idx-agenda-text');
+        if(textEl) textEl.textContent = agenda.text || '—';
+      }
     }
   })
   .catch(function(){});
