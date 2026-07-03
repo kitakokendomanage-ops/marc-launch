@@ -617,8 +617,8 @@ body{
           </select>
         </div>
         <div style="display:flex;gap:6px;">
-          <button onclick="submitCalAdd()" style="flex:1;background:#1B3A5C;color:#fff;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">追加する</button>
-          <button onclick="document.getElementById('idx-cal-add-form').style.display='none'" style="flex:1;background:#f0f0f0;color:#333;border:none;border-radius:8px;padding:8px;font-size:12px;cursor:pointer;font-family:inherit;">キャンセル</button>
+          <button id="cal-save-btn" onclick="submitCalAdd()" style="flex:1;background:#1B3A5C;color:#fff;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">追加する</button>
+          <button onclick="cancelCalAdd()" style="flex:1;background:#f0f0f0;color:#333;border:none;border-radius:8px;padding:8px;font-size:12px;cursor:pointer;font-family:inherit;">キャンセル</button>
         </div>
       </div>
 
@@ -1274,6 +1274,30 @@ function loadMonthEvents(year, month) {
   });
 }
 
+var editingEventId = null; // 編集中のイベントID（nullなら新規追加）
+
+function editCalEvent(eventId, title, dateKey, timeStart, timeEnd) {
+  editingEventId = eventId;
+  var form = document.getElementById('idx-cal-add-form');
+  if (!form) return;
+  form.style.display = 'block';
+  // フォームタイトルを「編集」に変更
+  var label = form.querySelector('div[style*="font-size:11px"]');
+  if (label) label.textContent = '予定を編集（変更して「更新する」を押してください）';
+  // 保存ボタンのラベルを「更新する」に変更
+  var saveBtn = document.getElementById('cal-save-btn');
+  if (saveBtn) saveBtn.textContent = '更新する';
+  // フォームに現在の値を入力
+  var titleEl = document.getElementById('idx-cal-title');
+  var dateEl  = document.getElementById('idx-cal-date');
+  var startEl = document.getElementById('idx-cal-start');
+  var endEl   = document.getElementById('idx-cal-end');
+  if (titleEl) titleEl.value = title;
+  if (dateEl && dateKey) dateEl.value = dateKey;
+  if (startEl && timeStart) startEl.value = timeStart;
+  if (endEl && timeEnd)     endEl.value   = timeEnd;
+}
+
 function copyEventToForm(title, timeStart, timeEnd) {
   // タイトルはencodeURIComponent経由で渡される場合があるのでデコードする
   try { title = decodeURIComponent(title); } catch(e) {}
@@ -1359,6 +1383,7 @@ function renderMonthList(year, month, events, grid) {
       html += '<div style="background:#E6F5F0;color:#0F6E56;border-radius:4px;padding:2px 7px;font-size:11px;font-weight:700;white-space:nowrap;">'+(ev.time?ev.time:'終日')+(ev.timeEnd?'〜'+ev.timeEnd:'')+'</div>';
       html += '<div style="font-size:13px;color:#333;flex:1;">'+safeTitle+'</div>';
       html += '<button data-copy data-title="'+safeTitle+'" data-time="'+(ev.time||'')+'" data-timeend="'+(ev.timeEnd||'')+'" style="background:none;border:1px solid #ddd;color:#555;font-size:12px;cursor:pointer;padding:4px 8px;border-radius:5px;min-width:36px;min-height:36px;">📋</button>';
+      if (evId) html += '<button data-edit data-evid="'+evId+'" data-title="'+safeTitle+'" data-datekey="'+dk+'" data-time="'+(ev.time||'')+'" data-timeend="'+(ev.timeEnd||'')+'" style="background:none;border:1px solid #4a9970;color:#4a9970;font-size:12px;cursor:pointer;padding:4px 8px;border-radius:5px;min-width:36px;min-height:36px;">✏️</button>';
       if (evId) html += '<button data-delete data-evid="'+evId+'" data-title="'+safeTitle+'" data-datekey="'+dk+'" style="background:none;border:none;color:#c0392b;font-size:18px;font-weight:700;cursor:pointer;padding:4px 8px;min-width:36px;min-height:36px;">×</button>';
       html += '</div>';
     });
@@ -1371,6 +1396,8 @@ function renderMonthList(year, month, events, grid) {
   grid.addEventListener('click', function handler(e) {
     var cp = e.target.closest('[data-copy]');
     if (cp) { copyEventToForm(cp.dataset.title, cp.dataset.time, cp.dataset.timeend); return; }
+    var ed = e.target.closest('[data-edit]');
+    if (ed) { editCalEvent(ed.dataset.evid, ed.dataset.title, ed.dataset.datekey, ed.dataset.time, ed.dataset.timeend); return; }
     var del = e.target.closest('[data-delete]');
     if (del) { deleteCalEvent(del.dataset.evid, del.dataset.title, del.dataset.datekey); return; }
   });
@@ -1438,6 +1465,7 @@ function renderMonthGridDesktop(year, month, events, grid) {
       html += '<div style="background:'+(ev.today?'#1B3A5C':'#E6F5F0')+';color:'+(ev.today?'#fff':'#0F6E56')+';border-radius:5px;padding:2px 7px;font-size:10px;font-weight:700;white-space:nowrap;min-width:36px;text-align:center;">'+(ev.date||'')+'</div>';
       html += '<div style="font-size:12px;color:#333;flex:1;">'+safeTitle3+(ev.time?'<span style="color:#888;font-size:11px;"> '+ev.time+'</span>':'')+'</div>';
       html += '<button data-copy data-title="'+safeTitle3+'" data-time="'+(ev.time||'')+'" data-timeend="'+(ev.timeEnd||'')+'" style="background:none;border:1px solid #ddd;color:#555;font-size:10px;font-weight:700;cursor:pointer;padding:1px 6px;border-radius:5px;flex-shrink:0;">📋</button>';
+      if (evId) html += '<button data-edit data-evid="'+evId+'" data-title="'+safeTitle3+'" data-datekey="'+(ev.dateKey||'')+'" data-time="'+(ev.time||'')+'" data-timeend="'+(ev.timeEnd||'')+'" style="background:none;border:1px solid #4a9970;color:#4a9970;font-size:10px;cursor:pointer;padding:1px 6px;border-radius:5px;flex-shrink:0;">✏️</button>';
       if (evId) html += '<button data-delete data-evid="'+evId+'" data-title="'+safeTitle3+'" data-datekey="'+(ev.dateKey||'')+'" style="background:none;border:none;color:#c0392b;font-size:12px;font-weight:700;cursor:pointer;padding:0 4px;flex-shrink:0;">×</button>';
       html += '</div>';
     });
@@ -1450,6 +1478,8 @@ function renderMonthGridDesktop(year, month, events, grid) {
   grid.addEventListener('click', function handler(e) {
     var cp = e.target.closest('[data-copy]');
     if (cp) { copyEventToForm(cp.dataset.title, cp.dataset.time, cp.dataset.timeend); return; }
+    var ed = e.target.closest('[data-edit]');
+    if (ed) { editCalEvent(ed.dataset.evid, ed.dataset.title, ed.dataset.datekey, ed.dataset.time, ed.dataset.timeend); return; }
     var del = e.target.closest('[data-delete]');
     if (del) { deleteCalEvent(del.dataset.evid, del.dataset.title, del.dataset.datekey); }
   });
@@ -1591,9 +1621,26 @@ function loadNewsForIndex(){
   .catch(function(){});
 }
 
+function cancelCalAdd(){
+  editingEventId = null;
+  var form = document.getElementById('idx-cal-add-form');
+  if (form) form.style.display = 'none';
+  var label = form && form.querySelector('div[style*="font-size:11px"]');
+  if (label) label.textContent = '予定を追加';
+  var saveBtn = document.getElementById('cal-save-btn');
+  if (saveBtn) saveBtn.textContent = '追加する';
+}
+
 function openCalAdd(){
+  editingEventId = null;
   const form = document.getElementById('idx-cal-add-form');
-  if(form) form.style.display = form.style.display === 'none' ? 'block' : 'none';
+  if (!form) return;
+  // ラベルを「追加」に戻す
+  var label = form.querySelector('div[style*="font-size:11px"]');
+  if (label) label.textContent = '予定を追加';
+  var saveBtn = document.getElementById('cal-save-btn');
+  if (saveBtn) saveBtn.textContent = '追加する';
+  form.style.display = form.style.display === 'none' ? 'block' : 'none';
 }
 
 function submitCalAdd(){
@@ -1603,45 +1650,44 @@ function submitCalAdd(){
   const end   = (document.getElementById('idx-cal-end')||{}).value   || '18:00';
   if(!title || !title.trim()){ showNavToast('⚠ タイトルを入力してください'); return; }
   if(!date){ showNavToast('⚠ 日付を入力してください'); return; }
-  var btn = document.querySelector('#idx-cal-add-form button');
-  if(btn){ btn.disabled = true; btn.textContent = '⏳ 登録中…'; }
-  // ★no-cors POSTだとGASからのレスポンスが受け取れずボタンが永遠に「登録中…」のまま
-  //   固まる問題があったため、GETリクエスト（クエリパラメータ）で送る方式に変更。
-  //   GETは同じGASのdoGetで処理できるのでCORS問題が発生しない。
-  var params = new URLSearchParams({
-    action: 'addEvent',
-    title: title.trim(),
-    date: date,
-    time: start,
-    timeEnd: end
-  });
-  // タイムアウト（15秒）を設定
-  var timer = setTimeout(function(){
-    showNavToast('⚠ 登録がタイムアウトしました。Googleカレンダーを確認してから再試行してください');
-    if(btn){ btn.disabled = false; btn.textContent = '追加する'; }
-  }, 15000);
-  fetch(GAS_DASH + '?' + params.toString(), { method: 'GET' })
-  .then(function(r){ return r.json(); })
-  .then(function(data){
-    clearTimeout(timer);
-    if(data.status === 'ok'){
-      document.getElementById('idx-cal-add-form').style.display = 'none';
-      document.getElementById('idx-cal-title').value = '';
-      var key = currentCalYear + '-' + currentCalMonth;
-      delete calCache[key];
-      showNavToast('✓ 予定を追加しました');
-      setTimeout(function(){ loadMonthEvents(currentCalYear, currentCalMonth); }, 1500);
-    } else {
-      showNavToast('⚠ 登録に失敗しました：' + (data.message||'不明なエラー'));
-    }
-  })
-  .catch(function(err){
-    clearTimeout(timer);
-    showNavToast('⚠ 通信エラーが発生しました。再度お試しください');
-  })
-  .finally(function(){
-    if(btn){ btn.disabled = false; btn.textContent = '追加する'; }
-  });
+  var btn = document.getElementById('cal-save-btn');
+  var isEdit = !!editingEventId;
+  var oldEventId = editingEventId;
+  if(btn){ btn.disabled = true; btn.textContent = '⏳ 処理中…'; }
+
+  function doAdd() {
+    var params = new URLSearchParams({ action: 'addEvent', title: title.trim(), date: date, time: start, timeEnd: end });
+    var timer = setTimeout(function(){
+      showNavToast('⚠ タイムアウトしました。再度お試しください');
+      if(btn){ btn.disabled = false; btn.textContent = isEdit ? '更新する' : '追加する'; }
+    }, 15000);
+    fetch(GAS_DASH + '?' + params.toString(), { method: 'GET' })
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      clearTimeout(timer);
+      if(data.status === 'ok'){
+        cancelCalAdd();
+        document.getElementById('idx-cal-title').value = '';
+        var key = currentCalYear + '-' + currentCalMonth;
+        delete calCache[key];
+        showNavToast(isEdit ? '✓ 予定を更新しました' : '✓ 予定を追加しました');
+        setTimeout(function(){ loadMonthEvents(currentCalYear, currentCalMonth); }, 1500);
+      } else {
+        showNavToast('⚠ 失敗しました：' + (data.message||'不明なエラー'));
+      }
+    })
+    .catch(function(){ clearTimeout(timer); showNavToast('⚠ 通信エラーが発生しました'); })
+    .finally(function(){ if(btn){ btn.disabled = false; btn.textContent = isEdit ? '更新する' : '追加する'; } });
+  }
+
+  if(isEdit && oldEventId) {
+    var delParams = new URLSearchParams({ action: 'deleteEvent', eventId: oldEventId });
+    fetch(GAS_DASH + '?' + delParams.toString(), { method: 'GET' })
+    .then(function(){ doAdd(); })
+    .catch(function(){ doAdd(); });
+  } else {
+    doAdd();
+  }
 }
 </script>
 </body>
