@@ -1237,9 +1237,12 @@ function loadMonthEvents(year, month) {
     // 議題も更新
     const agenda = data.agenda;
     if (agenda && agenda.date) {
-      const wrap = document.getElementById('idx-agenda-wrap');
-      if (wrap) wrap.style.display = 'block';
-      const d = new Date(agenda.date + 'T00:00:00');
+      // ★過去の日付の議題は表示しない
+      var agendaDt = new Date(agenda.date.replace(/\//g, '-') + 'T23:59:59');
+      if (isNaN(agendaDt.getTime()) || agendaDt >= new Date()) {
+        const wrap = document.getElementById('idx-agenda-wrap');
+        if (wrap) wrap.style.display = 'block';
+        const d = new Date(agenda.date.replace(/\//g, '-') + 'T00:00:00');
       const DOW = ['日','月','火','水','木','金','土'];
       const dateLabel = (d.getMonth()+1) + '月' + d.getDate() + '日（' + DOW[d.getDay()] + '）';
       const timeLabel = agenda.start && agenda.end ? ' ' + agenda.start + '〜' + agenda.end : '';
@@ -1247,7 +1250,8 @@ function loadMonthEvents(year, month) {
       if (dateEl) dateEl.textContent = dateLabel + timeLabel;
       const textEl = document.getElementById('idx-agenda-text');
       if (textEl) textEl.textContent = agenda.text || '—';
-    }
+      } // if agendaDt >= new Date()
+    } // if agenda.date
   })
   .catch(function(){
     // getNewsMonthが未対応の場合、既存のgetNewsにフォールバック
@@ -1567,7 +1571,7 @@ function loadNewsForIndex(){
     const agenda = data.agenda;
     if(agenda && agenda.date){
       // ★過去の日付の議題は表示しない
-      var agendaDate = new Date(agenda.date + 'T23:59:59');
+      var agendaDate = new Date(agenda.date.replace(/\//g, '-') + 'T23:59:59');
       if(agendaDate >= new Date()) {
         const wrap = document.getElementById('idx-agenda-wrap');
         if(wrap) wrap.style.display = 'block';
